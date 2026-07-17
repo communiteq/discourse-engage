@@ -1,5 +1,5 @@
 import { LinkTo } from "@ember/routing";
-import AdminEngageSurveyResponses from "discourse/plugins/discourse-engage/admin/components/admin-engage-survey-responses";
+import AdminEngageSurveyResponses from "../../../../admin/components/admin-engage-survey-responses";
 
 export default <template>
   <div class="admin-detail engage-admin">
