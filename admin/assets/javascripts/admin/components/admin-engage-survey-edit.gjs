@@ -86,7 +86,7 @@ export default class AdminEngageSurveyEdit extends Component {
             id="survey-title"
             type="text"
             value={{this.title}}
-            {{on "input" (fn this.setTitle)}}
+            {{on "input" this.setTitle}}
             class="form-control"
           />
         </div>
@@ -97,7 +97,7 @@ export default class AdminEngageSurveyEdit extends Component {
             id="survey-priority"
             type="number"
             value={{this.priority}}
-            {{on "input" (fn this.setPriority)}}
+            {{on "input" this.setPriority}}
             class="form-control"
           />
         </div>
@@ -116,7 +116,7 @@ export default class AdminEngageSurveyEdit extends Component {
           <textarea
             id="survey-rules"
             value={{this.rulesJson}}
-            {{on "input" (fn this.setRulesJson)}}
+            {{on "input" this.setRulesJson}}
             class="form-control"
             rows="6"
           ></textarea>
@@ -127,7 +127,7 @@ export default class AdminEngageSurveyEdit extends Component {
           <textarea
             id="survey-json"
             value={{this.surveyJson}}
-            {{on "input" (fn this.setSurveyJson)}}
+            {{on "input" this.setSurveyJson}}
             class="form-control"
             rows="10"
           ></textarea>

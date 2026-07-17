@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { fn } from "@ember/helper";
+import { fn, concat } from "@ember/helper";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { LinkTo } from "@ember/routing";
