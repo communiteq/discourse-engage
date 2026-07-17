@@ -63,6 +63,16 @@ module ::DiscourseEngage
         payload
       end
 
+      def list_responses(survey_id)
+        prefix = "#{RESPONSE_KEY_PREFIX}#{survey_id}:"
+        PluginStoreRow
+          .where(plugin_name: DiscourseEngage::PLUGIN_NAME, type_name: "JSON")
+          .where("key LIKE ?", "#{prefix}%")
+          .order(id: :asc)
+          .map { |row| decode_json(row.value) }
+          .compact
+      end
+
       def get_state(survey_id, user_id)
         PluginStore.get(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id)) || {}
       end

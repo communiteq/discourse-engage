@@ -43,6 +43,66 @@ module DiscourseEngage
       render json: success_json
     end
 
+    def entries
+      raise Discourse::InvalidParameters.new(:id) if params[:id].blank?
+
+      survey = DiscourseEngage::Store.get_survey(params[:id])
+      raise Discourse::NotFound if survey.blank?
+
+      responses = DiscourseEngage::Store.list_responses(params[:id])
+      user_ids = responses.map { |r| r["user_id"] || r[:user_id] }.compact.uniq
+      users_by_id = User.where(id: user_ids).index_by(&:id)
+
+      entries =
+        responses.map do |r|
+          uid = r["user_id"] || r[:user_id]
+          user = users_by_id[uid]
+          {
+            response_id: r["response_id"] || r[:response_id],
+            user_id: uid,
+            username: user&.username || "unknown",
+            submitted_at: r["submitted_at"] || r[:submitted_at],
+            answers: r["answers"] || r[:answers] || {},
+          }
+        end
+
+      render_json_dump(survey: survey, entries: entries)
+    end
+
+    def export
+      raise Discourse::InvalidParameters.new(:id) if params[:id].blank?
+
+      survey = DiscourseEngage::Store.get_survey(params[:id])
+      raise Discourse::NotFound if survey.blank?
+
+      responses = DiscourseEngage::Store.list_responses(params[:id])
+      user_ids = responses.map { |r| r["user_id"] || r[:user_id] }.compact.uniq
+      users_by_id = User.where(id: user_ids).index_by(&:id)
+
+      # Build CSV
+      csv_rows = ["Username,Submitted At,Answers\n"]
+      responses.each do |r|
+        uid = r["user_id"] || r[:user_id]
+        user = users_by_id[uid]
+        username = user&.username || "unknown"
+        submitted_at = r["submitted_at"] || r[:submitted_at] || ""
+        answers = JSON.generate(r["answers"] || r[:answers] || {})
+
+        # Escape quotes in CSV fields
+        username = "\"#{username.gsub('"', '""')}\""
+        answers = "\"#{answers.gsub('"', '""')}\""
+
+        csv_rows << "#{username},#{submitted_at},#{answers}\n"
+      end
+
+      send_data(
+        csv_rows.join,
+        type: "text/csv",
+        disposition: "attachment",
+        filename: "survey-#{params[:id]}-entries.csv"
+      )
+    end
+
     private
 
     def survey_payload(existing: nil)

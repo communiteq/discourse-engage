@@ -13,6 +13,11 @@ en:
         delete: "Delete"
         edit: "Edit"
         cancel: "Cancel"
+        entries: "Entries"
+        no_entries: "No entries yet for this survey."
+        entries_table:
+          username: "Username"
+          submitted_at: "Submitted At"
         test_modal:
           title: "Survey Test"
           loading: "Loading survey preview..."
