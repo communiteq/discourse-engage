@@ -1,0 +1,16 @@
+plugins:
+  discourse_engage_enabled:
+    default: true
+    client: true
+  discourse_engage_initial_delay_seconds:
+    default: 60
+    client: true
+  discourse_engage_min_fetch_interval_seconds:
+    default: 60
+    client: true
+  discourse_engage_surveyjs_url:
+    default: "https://unpkg.com/survey-jquery/survey.jquery.min.js"
+    client: true
+  discourse_engage_surveycss_url:
+    default: "https://unpkg.com/survey-core/survey-core.min.css"
+    client: true

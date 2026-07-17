@@ -1,0 +1,45 @@
+en:
+  js:
+    discourse_engage:
+      admin:
+        title: "Engage"
+        heading: "Engagement Surveys"
+        nav:
+          surveys: "Surveys"
+        new: "New Survey"
+        refresh: "Refresh"
+        save: "Save"
+        test: "Test"
+        delete: "Delete"
+        edit: "Edit"
+        cancel: "Cancel"
+        test_modal:
+          title: "Survey Test"
+          loading: "Loading survey preview..."
+          no_config: "No Survey JSON available for this survey."
+          no_questions: "Preview loaded, but this config has no questions to display yet."
+          load_failed: "Could not load survey preview."
+          result: "Latest result"
+        fields:
+          title: "Title"
+          status: "Status"
+          priority: "Priority"
+          start_at: "Start At"
+          end_at: "End At"
+          rules_json: "Rules JSON"
+          survey_json: "Survey JSON"
+        status:
+          draft: "Draft"
+          active: "Active"
+          archived: "Archived"
+        empty: "No surveys yet. Create one to get started."
+      prompt:
+        title: "{{title}}"
+        body: "Would you like to take this quick survey?"
+        yes_now: "Yes, start survey"
+        ask_tomorrow: "Ask me tomorrow"
+        no_thanks: "No thanks"
+      survey:
+        submit: "Submit"
+        thanks: "Thanks for your feedback"
+        invalid_config: "Survey configuration is invalid"

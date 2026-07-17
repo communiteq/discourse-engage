@@ -1,0 +1,96 @@
+.engage-admin {
+  .engage-admin-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+  }
+
+  .engage-admin-list {
+    border: 1px solid var(--primary-low);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .engage-admin-item {
+    border-bottom: 1px solid var(--primary-low);
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .engage-admin-item:last-child {
+    border-bottom: none;
+  }
+
+  .engage-admin-form textarea {
+    min-height: 120px;
+    font-family: var(--font-family-monospace);
+  }
+}
+
+.engage-prompt-modal .engage-prompt-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.engage-survey-modal .engage-survey-host {
+  min-height: 260px;
+}
+
+.engage-survey-modal {
+  .d-modal__body {
+    overflow: visible;
+  }
+
+  .engage-survey-host {
+    background: var(--secondary);
+    border: 1px solid var(--primary-low);
+    border-radius: 10px;
+    padding: 1rem;
+    max-height: 70vh;
+    overflow: auto;
+    font-size: var(--font-up-1);
+    line-height: 1.45;
+  }
+
+  .engage-survey-host .sv_main,
+  .engage-survey-host .sv-root-modern,
+  .engage-survey-host .sd-root-modern {
+    font-family: var(--font-family);
+    color: var(--primary);
+  }
+
+  .engage-survey-host .sv_q,
+  .engage-survey-host .sd-element {
+    margin-bottom: 1rem;
+  }
+
+  .engage-survey-host .sv-title,
+  .engage-survey-host .sd-title {
+    font-size: var(--font-up-2);
+    font-weight: 600;
+  }
+
+  .engage-survey-host .sv-description,
+  .engage-survey-host .sd-description {
+    color: var(--primary-medium);
+  }
+
+  .engage-survey-host textarea,
+  .engage-survey-host select,
+  .engage-survey-host input[type="text"],
+  .engage-survey-host input[type="email"],
+  .engage-survey-host input[type="number"],
+  .engage-survey-host input[type="date"] {
+    width: 100%;
+    border-radius: 6px;
+  }
+
+  .engage-survey-host button,
+  .engage-survey-host input[type="button"],
+  .engage-survey-host input[type="submit"] {
+    border-radius: 7px;
+  }
+}

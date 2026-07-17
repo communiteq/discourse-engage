@@ -1,0 +1,7 @@
+en:
+  site_settings:
+    discourse_engage_enabled: "Enable discourse-engage plugin"
+    discourse_engage_initial_delay_seconds: "Initial delay before first eligibility check (seconds)"
+    discourse_engage_min_fetch_interval_seconds: "Minimum time between eligibility checks on page changes (seconds)"
+    discourse_engage_surveyjs_url: "SurveyJS script URL"
+    discourse_engage_surveycss_url: "Survey stylesheet URL"
