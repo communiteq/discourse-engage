@@ -14,6 +14,10 @@ en:
         edit: "Edit"
         cancel: "Cancel"
         entries: "Entries"
+        export_csv: "Export CSV"
+        show_data: "Show Data"
+        hide_data: "Hide Data"
+        answers: "Answers"
         no_entries: "No entries yet for this survey."
         entries_table:
           username: "Username"

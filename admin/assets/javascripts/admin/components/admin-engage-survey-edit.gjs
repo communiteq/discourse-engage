@@ -3,7 +3,6 @@ import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { on } from "@ember/modifier";
-import { fn } from "@ember/helper";
 import DButton from "discourse/components/d-button";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
@@ -104,7 +103,12 @@ export default class AdminEngageSurveyEdit extends Component {
 
         <div class="form-group">
           <label for="survey-status">{{i18n "discourse_engage.admin.fields.status"}}</label>
-          <select id="survey-status" value={{this.status}} class="form-control">
+          <select
+            id="survey-status"
+            value={{this.status}}
+            {{on "change" this.setStatus}}
+            class="form-control"
+          >
             <option value="draft">{{i18n "discourse_engage.admin.status.draft"}}</option>
             <option value="active">{{i18n "discourse_engage.admin.status.active"}}</option>
             <option value="archived">{{i18n "discourse_engage.admin.status.archived"}}</option>
@@ -135,13 +139,13 @@ export default class AdminEngageSurveyEdit extends Component {
 
         <div class="form-group">
           <DButton
-            @label={{i18n "discourse_engage.admin.save"}}
+            @label="discourse_engage.admin.save"
             @action={{this.save}}
             @loading={{this.saving}}
             class="btn-primary"
           />
           <DButton
-            @label={{i18n "discourse_engage.admin.cancel"}}
+            @label="discourse_engage.admin.cancel"
             @action={{this.cancel}}
             class="btn-default"
           />
@@ -158,6 +162,11 @@ export default class AdminEngageSurveyEdit extends Component {
   @action
   setPriority(event) {
     this.priority = parseInt(event.target.value, 10);
+  }
+
+  @action
+  setStatus(event) {
+    this.status = event.target.value;
   }
 
   @action

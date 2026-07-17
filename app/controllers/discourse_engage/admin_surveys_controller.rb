@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module DiscourseEngage
   class AdminSurveysController < ::Admin::AdminController
     requires_plugin DiscourseEngage::PLUGIN_NAME
+    skip_before_action :check_xhr, only: [:export]
 
     def index
       render_json_dump(surveys: DiscourseEngage::Store.list_surveys)
@@ -58,6 +61,7 @@ module DiscourseEngage
           uid = r["user_id"] || r[:user_id]
           user = users_by_id[uid]
           {
+            entry_id: "#{uid || 'unknown'}:#{r["response_id"] || r[:response_id]}",
             response_id: r["response_id"] || r[:response_id],
             user_id: uid,
             username: user&.username || "unknown",
@@ -79,25 +83,23 @@ module DiscourseEngage
       user_ids = responses.map { |r| r["user_id"] || r[:user_id] }.compact.uniq
       users_by_id = User.where(id: user_ids).index_by(&:id)
 
-      # Build CSV
-      csv_rows = ["Username,Submitted At,Answers\n"]
-      responses.each do |r|
-        uid = r["user_id"] || r[:user_id]
-        user = users_by_id[uid]
-        username = user&.username || "unknown"
-        submitted_at = r["submitted_at"] || r[:submitted_at] || ""
-        answers = JSON.generate(r["answers"] || r[:answers] || {})
+      csv_data = CSV.generate do |csv|
+        csv << ["Username", "Submitted At", "Answers"]
 
-        # Escape quotes in CSV fields
-        username = "\"#{username.gsub('"', '""')}\""
-        answers = "\"#{answers.gsub('"', '""')}\""
-
-        csv_rows << "#{username},#{submitted_at},#{answers}\n"
+        responses.each do |r|
+          uid = r["user_id"] || r[:user_id]
+          user = users_by_id[uid]
+          csv << [
+            user&.username || "unknown",
+            r["submitted_at"] || r[:submitted_at] || "",
+            JSON.generate(r["answers"] || r[:answers] || {}),
+          ]
+        end
       end
 
       send_data(
-        csv_rows.join,
-        type: "text/csv",
+        csv_data,
+        type: "text/csv; charset=utf-8",
         disposition: "attachment",
         filename: "survey-#{params[:id]}-entries.csv"
       )

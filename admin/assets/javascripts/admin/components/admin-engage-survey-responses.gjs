@@ -2,14 +2,13 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { on } from "@ember/modifier";
-import { fn } from "@ember/helper";
+import { fn, get } from "@ember/helper";
 import DButton from "discourse/components/d-button";
-import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
 
 export default class AdminEngageSurveyResponses extends Component {
-  @tracked expandedRows = new Set();
+  @tracked expandedRows = {};
   @tracked exporting = false;
 
   get hasEntries() {
@@ -17,13 +16,11 @@ export default class AdminEngageSurveyResponses extends Component {
   }
 
   @action
-  toggleExpand(responseId) {
-    if (this.expandedRows.has(responseId)) {
-      this.expandedRows.delete(responseId);
-    } else {
-      this.expandedRows.add(responseId);
-    }
-    this.expandedRows = new Set(this.expandedRows);
+  toggleExpand(entryId) {
+    this.expandedRows = {
+      ...this.expandedRows,
+      [entryId]: !this.expandedRows[entryId],
+    };
   }
 
   @action
@@ -35,13 +32,20 @@ export default class AdminEngageSurveyResponses extends Component {
       const url = `/admin/plugins/discourse-engage/api/surveys/${surveyId}/export`;
 
       const response = await fetch(url, {
+        credentials: "same-origin",
         headers: {
+          Accept: "text/csv",
           "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content,
         },
       });
 
       if (!response.ok) {
         throw new Error("Export failed");
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/csv")) {
+        throw new Error("Export did not return CSV data");
       }
 
       const blob = await response.blob();
@@ -65,7 +69,7 @@ export default class AdminEngageSurveyResponses extends Component {
       <div class="entries-header">
         <h2>{{@survey.title}} - {{i18n "discourse_engage.admin.entries"}}</h2>
         <DButton
-          @label="Export CSV"
+          @label="discourse_engage.admin.export_csv"
           @action={{this.exportCsv}}
           @loading={{this.exporting}}
           class="btn-default"
@@ -88,22 +92,23 @@ export default class AdminEngageSurveyResponses extends Component {
                 <td>{{entry.submitted_at}}</td>
                 <td class="entry-actions">
                   <button
-                    {{on "click" (fn this.toggleExpand entry.response_id)}}
+                    type="button"
+                    {{on "click" (fn this.toggleExpand entry.entry_id)}}
                     class="btn btn-small"
                   >
-                    {{#if (this.expandedRows.has entry.response_id)}}
-                      Hide Data
+                    {{#if (get this.expandedRows entry.entry_id)}}
+                      {{i18n "discourse_engage.admin.hide_data"}}
                     {{else}}
-                      Show Data
+                      {{i18n "discourse_engage.admin.show_data"}}
                     {{/if}}
                   </button>
                 </td>
               </tr>
-              {{#if (this.expandedRows.has entry.response_id)}}
+              {{#if (get this.expandedRows entry.entry_id)}}
                 <tr class="entry-expanded">
                   <td colspan="3">
                     <div class="entry-data">
-                      <h4>Answers:</h4>
+                      <h4>{{i18n "discourse_engage.admin.answers"}}</h4>
                       <pre>{{this.formatJson entry.answers}}</pre>
                     </div>
                   </td>
