@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # name: discourse-engage
-# about: Rule-based SurveyJS engagement prompts for Discourse.
-# version: 0.1
+# about: Rule-based survey engagement prompts for Discourse.
+# version: 0.9
 # authors: Communiteq
 # url: https://github.com/communiteq/discourse-engage
 
