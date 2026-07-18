@@ -55,16 +55,6 @@ module ::DiscourseEngage
         # Clear PluginStore state
         PluginStore.remove(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id))
         invalidate_state_counts_cache
-
-        # Clear user custom fields set by eligibility tracking
-        custom_field_keys = [
-          "engage_completed_#{survey_id}",
-          "engage_declined_#{survey_id}",
-          "engage_next_#{survey_id}",
-        ]
-        UserCustomField
-          .where(user_id: user_id, name: custom_field_keys)
-          .delete_all
       end
 
       def count_responses(survey_id)
@@ -86,7 +76,7 @@ module ::DiscourseEngage
               .where("key LIKE ?", "#{STATE_KEY_PREFIX}%")
               .pluck(:key, :value)
 
-          counts = Hash.new { |h, k| h[k] = { deferred: 0, declined: 0 } }
+          counts = {}
           rows.each do |key, raw_value|
             # key: state:{survey_id}:{user_id}
             without_prefix = key.sub(STATE_KEY_PREFIX, "")
@@ -95,6 +85,7 @@ module ::DiscourseEngage
             data = decode_json(raw_value)
             next if data.nil?
             status = data["status"] || data[:status]
+            counts[survey_id] ||= { deferred: 0, declined: 0 }
             counts[survey_id][:deferred] += 1 if status == "deferred"
             counts[survey_id][:declined] += 1 if status == "declined"
           end

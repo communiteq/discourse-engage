@@ -45,12 +45,8 @@ module DiscourseEngage
           status: "deferred",
           next_eligible_at: tomorrow.iso8601,
         )
-        current_user.custom_fields[next_field(survey["id"])] = tomorrow.iso8601
-        current_user.save_custom_fields(true)
       when "decline"
         DiscourseEngage::Store.set_state(survey["id"], current_user.id, status: "declined")
-        current_user.custom_fields[declined_field(survey["id"])] = "true"
-        current_user.save_custom_fields(true)
       else
         raise Discourse::InvalidParameters.new(:decision)
       end
@@ -79,24 +75,8 @@ module DiscourseEngage
         )
 
       DiscourseEngage::Store.set_state(survey["id"], current_user.id, status: "completed")
-      current_user.custom_fields[completed_field(survey["id"])] = "true"
-      current_user.save_custom_fields(true)
 
       render_json_dump(response: response)
-    end
-
-    private
-
-    def completed_field(survey_id)
-      "engage_completed_#{survey_id}"
-    end
-
-    def declined_field(survey_id)
-      "engage_declined_#{survey_id}"
-    end
-
-    def next_field(survey_id)
-      "engage_next_#{survey_id}"
     end
   end
 end

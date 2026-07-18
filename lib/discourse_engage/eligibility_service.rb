@@ -37,13 +37,10 @@ module ::DiscourseEngage
       def suppressed?(survey_id, user)
         state = DiscourseEngage::Store.get_state(survey_id, user.id).with_indifferent_access
 
-        return true if truthy_custom_field?(user, completed_field(survey_id))
-        return true if truthy_custom_field?(user, declined_field(survey_id))
         return true if state[:status] == "completed"
         return true if state[:status] == "declined"
 
-        deferred_until =
-          state[:next_eligible_at].presence || user.custom_fields[next_field(survey_id)].presence
+        deferred_until = state[:next_eligible_at].presence
         return false if deferred_until.blank?
 
         parse_time(deferred_until) > Time.zone.now
@@ -57,22 +54,6 @@ module ::DiscourseEngage
         value.is_a?(Time) ? value : Time.zone.parse(value.to_s)
       end
 
-      def truthy_custom_field?(user, key)
-        value = user.custom_fields[key]
-        value == true || value == "true"
-      end
-
-      def completed_field(survey_id)
-        "engage_completed_#{survey_id}"
-      end
-
-      def declined_field(survey_id)
-        "engage_declined_#{survey_id}"
-      end
-
-      def next_field(survey_id)
-        "engage_next_#{survey_id}"
-      end
     end
   end
 end
