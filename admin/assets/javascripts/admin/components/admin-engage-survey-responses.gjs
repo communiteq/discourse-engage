@@ -8,9 +8,10 @@ import DButton from "discourse/components/d-button";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
+import AdminEngageDeleteEntry from "./modal/admin-engage-delete-entry";
 
 export default class AdminEngageSurveyResponses extends Component {
-  @service dialog;
+  @service modal;
 
   @tracked expandedRows = {};
   @tracked exporting = false;
@@ -136,21 +137,27 @@ export default class AdminEngageSurveyResponses extends Component {
 
   @action
   deleteEntry(entry) {
-    this.dialog.confirm({
-      message: i18n("discourse_engage.admin.delete_entry_confirm"),
-      didConfirm: async () => {
-        try {
-          const surveyId = this.args.survey.id;
-          await ajax(
-            `/admin/plugins/discourse-engage/api/surveys/${surveyId}/entries/${entry.user_id}/${entry.response_id}`,
-            { type: "DELETE" },
-          );
-          this.entries = this.entries.filter(
-            (e) => e.entry_id !== entry.entry_id,
-          );
-        } catch (error) {
-          popupAjaxError(error);
-        }
+    this.modal.show(AdminEngageDeleteEntry, {
+      model: {
+        entry,
+        onConfirm: async (resetEligibility) => {
+          try {
+            const surveyId = this.args.survey.id;
+            await ajax(
+              `/admin/plugins/discourse-engage/api/surveys/${surveyId}/entries/${entry.user_id}/${entry.response_id}`,
+              {
+                type: "DELETE",
+                data: { reset: resetEligibility },
+              },
+            );
+            this.entries = this.entries.filter(
+              (e) => e.entry_id !== entry.entry_id,
+            );
+          } catch (error) {
+            popupAjaxError(error);
+            throw error;
+          }
+        },
       },
     });
   }

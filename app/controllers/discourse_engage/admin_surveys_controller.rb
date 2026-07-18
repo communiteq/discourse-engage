@@ -60,7 +60,13 @@ module DiscourseEngage
       survey = DiscourseEngage::Store.get_survey(params[:id])
       raise Discourse::NotFound if survey.blank?
 
-      DiscourseEngage::Store.delete_response(params[:id], params[:user_id].to_i, params[:response_id])
+      user_id = params[:user_id].to_i
+      DiscourseEngage::Store.delete_response(params[:id], user_id, params[:response_id])
+
+      if params[:reset].to_s == "true"
+        DiscourseEngage::Store.reset_user_state(params[:id], user_id)
+      end
+
       render json: success_json
     end
 

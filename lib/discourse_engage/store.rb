@@ -50,6 +50,21 @@ module ::DiscourseEngage
         )
       end
 
+      def reset_user_state(survey_id, user_id)
+        # Clear PluginStore state
+        PluginStore.remove(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id))
+
+        # Clear user custom fields set by eligibility tracking
+        custom_field_keys = [
+          "engage_completed_#{survey_id}",
+          "engage_declined_#{survey_id}",
+          "engage_next_#{survey_id}",
+        ]
+        UserCustomField
+          .where(user_id: user_id, name: custom_field_keys)
+          .delete_all
+      end
+
       def count_responses(survey_id)
         prefix = "#{RESPONSE_KEY_PREFIX}#{survey_id}:"
         PluginStoreRow

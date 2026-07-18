@@ -20,6 +20,13 @@ en:
         answers: "Answers"
         delete_entry: "Delete Entry"
         delete_entry_confirm: "Are you sure you want to delete this entry?"
+        delete_entry_modal:
+          title: "Delete Entry"
+          body: "Remove the response data for %{username}."
+          reset_label: "Also reset eligibility (allow re-survey)"
+          reset_hint_on: "The user's completion status will be cleared. They may be shown this survey again."
+          reset_hint_off: "The user's completion status is preserved. They will not be shown this survey again."
+          confirm: "Delete"
         entries_count: "Entries"
         no_entries: "No entries yet for this survey."
         entries_table:
