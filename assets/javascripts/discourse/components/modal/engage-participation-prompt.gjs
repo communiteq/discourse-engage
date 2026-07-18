@@ -12,6 +12,14 @@ import EngageSurveyModal from "discourse/plugins/discourse-engage/discourse/comp
 export default class EngageParticipationPrompt extends Component {
   @service modal;
 
+  get allowDefer() {
+    return this.args.model?.allow_defer !== false;
+  }
+
+  get allowDecline() {
+    return this.args.model?.allow_decline !== false;
+  }
+
   @action
   async choose(decision) {
     try {
@@ -44,16 +52,20 @@ export default class EngageParticipationPrompt extends Component {
             class="btn-primary"
             @action={{fn this.choose "start"}}
           />
-          <DButton
-            @label="discourse_engage.prompt.ask_tomorrow"
-            class="btn-default"
-            @action={{fn this.choose "defer"}}
-          />
-          <DButton
-            @label="discourse_engage.prompt.no_thanks"
-            class="btn-flat"
-            @action={{fn this.choose "decline"}}
-          />
+          {{#if this.allowDefer}}
+            <DButton
+              @label="discourse_engage.prompt.ask_tomorrow"
+              class="btn-default"
+              @action={{fn this.choose "defer"}}
+            />
+          {{/if}}
+          {{#if this.allowDecline}}
+            <DButton
+              @label="discourse_engage.prompt.no_thanks"
+              class="btn-flat"
+              @action={{fn this.choose "decline"}}
+            />
+          {{/if}}
         </div>
       </:body>
     </DModal>

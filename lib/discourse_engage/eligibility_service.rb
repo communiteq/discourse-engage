@@ -54,6 +54,28 @@ module ::DiscourseEngage
         value.is_a?(Time) ? value : Time.zone.parse(value.to_s)
       end
 
+      def bool_setting(hash, key, default: true)
+        # Use .key? to check for presence without being fooled by falsy values
+        value = if hash.key?(key)
+          hash[key]
+        elsif hash.key?(key.to_sym)
+          hash[key.to_sym]
+        else
+          return default
+        end
+
+        return value if value == true || value == false
+
+        case value.to_s.strip.downcase
+        when "true", "1", "yes", "on"
+          true
+        when "false", "0", "no", "off"
+          false
+        else
+          default
+        end
+      end
+
     end
   end
 end

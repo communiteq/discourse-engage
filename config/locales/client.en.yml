@@ -45,6 +45,8 @@ en:
           title: "Title"
           status: "Status"
           priority: "Priority"
+          allow_decline: "Allow decline"
+          allow_defer: "Allow defer"
           created_at: "Created"
           start_at: "Start At"
           end_at: "End At"

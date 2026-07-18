@@ -9,6 +9,8 @@ export default class DiscourseEngageSurveysEditRoute extends DiscourseRoute {
         title: "",
         priority: 0,
         status: "draft",
+        allow_decline: true,
+        allow_defer: true,
         rules_json: "{}",
         survey_json: "{}",
       };

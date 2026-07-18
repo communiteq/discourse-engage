@@ -164,6 +164,8 @@ module DiscourseEngage
           title: title,
           status: blob[:status].presence || "draft",
           priority: blob[:priority].presence || 0,
+          allow_decline: coerce_bool(blob[:allow_decline], default: true),
+          allow_defer: coerce_bool(blob[:allow_defer], default: true),
           start_at: blob[:start_at],
           end_at: blob[:end_at],
           rules: rules,
@@ -182,6 +184,8 @@ module DiscourseEngage
         title: title,
         status: params[:status].presence || "draft",
         priority: params[:priority].presence || 0,
+        allow_decline: coerce_bool(params[:allow_decline], default: true),
+        allow_defer: coerce_bool(params[:allow_defer], default: true),
         start_at: params[:start_at],
         end_at: params[:end_at],
         rules: rules,
@@ -206,6 +210,20 @@ module DiscourseEngage
       JSON.parse(value)
     rescue JSON::ParserError
       raise Discourse::InvalidParameters.new(key)
+    end
+
+    def coerce_bool(value, default: true)
+      return default if value.nil?
+      return value if value == true || value == false
+
+      case value.to_s.strip.downcase
+      when "true", "1", "yes", "on"
+        true
+      when "false", "0", "no", "off"
+        false
+      else
+        default
+      end
     end
   end
 end

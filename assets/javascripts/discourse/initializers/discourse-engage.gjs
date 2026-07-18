@@ -1,5 +1,6 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 import EngageParticipationPrompt from "discourse/plugins/discourse-engage/discourse/components/modal/engage-participation-prompt";
+import EngageSurveyModal from "discourse/plugins/discourse-engage/discourse/components/modal/engage-survey-modal";
 
 let surveyJsLoader;
 const SAFE_CORE_URL = "https://unpkg.com/survey-core/survey.core.min.js";
@@ -153,9 +154,18 @@ export default {
           );
 
           const modal = api.container.lookup("service:modal");
-          modal.show(EngageParticipationPrompt, {
-            model: survey,
-          });
+          
+          // If both allow_decline and allow_defer are false, skip the participation prompt
+          // and go straight to the survey
+          if (survey.skip_prompt) {
+            modal.show(EngageSurveyModal, {
+              model: survey,
+            });
+          } else {
+            modal.show(EngageParticipationPrompt, {
+              model: survey,
+            });
+          }
         } catch {
           // Ignore prompt errors to avoid affecting app navigation.
         } finally {

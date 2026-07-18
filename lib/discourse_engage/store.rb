@@ -31,6 +31,9 @@ module ::DiscourseEngage
         payload[:id] = survey_id
         payload[:status] ||= "draft"
         payload[:priority] = payload[:priority].to_i
+        # Only apply defaults if the keys were not explicitly passed in `survey`
+        payload[:allow_decline] = true unless survey.key?(:allow_decline) || survey.key?("allow_decline")
+        payload[:allow_defer] = true unless survey.key?(:allow_defer) || survey.key?("allow_defer")
         payload[:rules] ||= {}
         payload[:survey_json] ||= {}
         payload[:created_at] ||= Time.zone.now.iso8601
