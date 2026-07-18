@@ -69,9 +69,6 @@ export default class EngageSurveyModal extends Component {
           <div class="engage-survey-host" {{didInsert this.setupSurvey}}></div>
         {{/if}}
       </:body>
-      <:footer>
-        <DButton @label="close" @action={{@closeModal}} class="btn-flat" />
-      </:footer>
     </DModal>
   </template>
 }
