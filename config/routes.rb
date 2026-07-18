@@ -3,7 +3,7 @@
 DiscourseEngage::Engine.routes.draw do
 end
 
-Discourse::Application.routes.draw do
+Discourse::Application.routes.append do
   namespace :admin, constraints: StaffConstraint.new do
     get "plugins/discourse-engage/surveys" => "plugins#show",
         :defaults => {
