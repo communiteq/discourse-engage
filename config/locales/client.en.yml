@@ -28,6 +28,8 @@ en:
           reset_hint_off: "The user's completion status is preserved. They will not be shown this survey again."
           confirm: "Delete"
         entries_count: "Entries"
+        deferred_count: "Deferred"
+        declined_count: "Declined"
         no_entries: "No entries yet for this survey."
         entries_table:
           username: "Username"
@@ -43,6 +45,7 @@ en:
           title: "Title"
           status: "Status"
           priority: "Priority"
+          created_at: "Created"
           start_at: "Start At"
           end_at: "End At"
           rules_json: "Rules JSON"

@@ -9,6 +9,7 @@ import DPageSubheader from "discourse/components/d-page-subheader";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
+import formatDate from "discourse/helpers/format-date";
 import AdminEngageSurveyTest from "./modal/admin-engage-survey-test";
 
 export default class AdminEngageSurveys extends Component {
@@ -18,6 +19,7 @@ export default class AdminEngageSurveys extends Component {
   @tracked loading = false;
   @tracked surveys = [];
   @tracked entryCounts = {};
+  @tracked stateCounts = {};
 
   constructor() {
     super(...arguments);
@@ -35,6 +37,7 @@ export default class AdminEngageSurveys extends Component {
       const result = await ajax("/admin/plugins/discourse-engage/api/surveys");
       this.surveys = result.surveys || [];
       this.entryCounts = result.entry_counts || {};
+      this.stateCounts = result.state_counts || {};
     } catch (error) {
       popupAjaxError(error);
     } finally {
@@ -74,6 +77,9 @@ export default class AdminEngageSurveys extends Component {
               <th>{{i18n "discourse_engage.admin.fields.priority"}}</th>
               <th>{{i18n "discourse_engage.admin.fields.status"}}</th>
               <th>{{i18n "discourse_engage.admin.entries_count"}}</th>
+              <th>{{i18n "discourse_engage.admin.deferred_count"}}</th>
+              <th>{{i18n "discourse_engage.admin.declined_count"}}</th>
+              <th>{{i18n "discourse_engage.admin.fields.created_at"}}</th>
               <th></th>
             </tr>
           </thead>
@@ -88,6 +94,9 @@ export default class AdminEngageSurveys extends Component {
                   </span>
                 </td>
                 <td class="engage-admin-entry-count">{{get this.entryCounts survey.id}}</td>
+                <td class="engage-admin-deferred-count">{{get (get this.stateCounts survey.id) "deferred"}}</td>
+                <td class="engage-admin-declined-count">{{get (get this.stateCounts survey.id) "declined"}}</td>
+                <td class="engage-admin-created-at">{{formatDate survey.created_at leaveAgo=true}}</td>
                 <td class="engage-admin-actions">
                   <LinkTo
                     @route="adminPlugins.show.discourse-engage-surveys.edit"

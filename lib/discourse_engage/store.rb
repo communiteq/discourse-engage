@@ -5,6 +5,7 @@ module ::DiscourseEngage
     SURVEY_KEY_PREFIX = "survey:".freeze
     RESPONSE_KEY_PREFIX = "response:".freeze
     STATE_KEY_PREFIX = "state:".freeze
+    STATE_COUNTS_CACHE_KEY = "discourse_engage:state_counts".freeze
 
     class << self
       def list_surveys
@@ -53,6 +54,7 @@ module ::DiscourseEngage
       def reset_user_state(survey_id, user_id)
         # Clear PluginStore state
         PluginStore.remove(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id))
+        invalidate_state_counts_cache
 
         # Clear user custom fields set by eligibility tracking
         custom_field_keys = [
@@ -71,6 +73,37 @@ module ::DiscourseEngage
           .where(plugin_name: DiscourseEngage::PLUGIN_NAME, type_name: "JSON")
           .where("key LIKE ?", "#{prefix}%")
           .count
+      end
+
+      # One SQL query across all state rows; result cached for 5 minutes and
+      # explicitly invalidated on every state write.
+      # Returns { survey_id => { deferred: N, declined: N } }.
+      def count_states_by_status
+        Rails.cache.fetch(STATE_COUNTS_CACHE_KEY, expires_in: 5.minutes) do
+          rows =
+            PluginStoreRow
+              .where(plugin_name: DiscourseEngage::PLUGIN_NAME, type_name: "JSON")
+              .where("key LIKE ?", "#{STATE_KEY_PREFIX}%")
+              .pluck(:key, :value)
+
+          counts = Hash.new { |h, k| h[k] = { deferred: 0, declined: 0 } }
+          rows.each do |key, raw_value|
+            # key: state:{survey_id}:{user_id}
+            without_prefix = key.sub(STATE_KEY_PREFIX, "")
+            survey_id, _uid = without_prefix.split(":", 2)
+            next if survey_id.blank?
+            data = decode_json(raw_value)
+            next if data.nil?
+            status = data["status"] || data[:status]
+            counts[survey_id][:deferred] += 1 if status == "deferred"
+            counts[survey_id][:declined] += 1 if status == "declined"
+          end
+          counts
+        end
+      end
+
+      def invalidate_state_counts_cache
+        Rails.cache.delete(STATE_COUNTS_CACHE_KEY)
       end
 
       def store_response(survey_id:, user_id:, answers:, metadata: {})
@@ -112,6 +145,7 @@ module ::DiscourseEngage
         payload = current.merge(attrs).with_indifferent_access
         payload[:updated_at] = Time.zone.now.iso8601
         PluginStore.set(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id), payload)
+        invalidate_state_counts_cache
         payload
       end
 

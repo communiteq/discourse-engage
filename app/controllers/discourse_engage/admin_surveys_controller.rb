@@ -9,12 +9,20 @@ module DiscourseEngage
 
     def index
       surveys = DiscourseEngage::Store.list_surveys
+      survey_ids = surveys.map { |s| s["id"] || s[:id] }
+
       entry_counts =
-        surveys.each_with_object({}) do |s, h|
-          sid = s["id"] || s[:id]
+        survey_ids.each_with_object({}) do |sid, h|
           h[sid] = DiscourseEngage::Store.count_responses(sid)
         end
-      render_json_dump(surveys: surveys, entry_counts: entry_counts)
+
+      state_counts = DiscourseEngage::Store.count_states_by_status
+
+      render_json_dump(
+        surveys: surveys,
+        entry_counts: entry_counts,
+        state_counts: state_counts,
+      )
     end
 
     def show
