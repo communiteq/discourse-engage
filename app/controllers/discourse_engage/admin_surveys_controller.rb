@@ -8,7 +8,13 @@ module DiscourseEngage
     skip_before_action :check_xhr, only: [:export]
 
     def index
-      render_json_dump(surveys: DiscourseEngage::Store.list_surveys)
+      surveys = DiscourseEngage::Store.list_surveys
+      entry_counts =
+        surveys.each_with_object({}) do |s, h|
+          sid = s["id"] || s[:id]
+          h[sid] = DiscourseEngage::Store.count_responses(sid)
+        end
+      render_json_dump(surveys: surveys, entry_counts: entry_counts)
     end
 
     def show
@@ -43,6 +49,18 @@ module DiscourseEngage
       raise Discourse::InvalidParameters.new(:id) if params[:id].blank?
 
       DiscourseEngage::Store.delete_survey(params[:id])
+      render json: success_json
+    end
+
+    def destroy_entry
+      raise Discourse::InvalidParameters.new(:id) if params[:id].blank?
+      raise Discourse::InvalidParameters.new(:user_id) if params[:user_id].blank?
+      raise Discourse::InvalidParameters.new(:response_id) if params[:response_id].blank?
+
+      survey = DiscourseEngage::Store.get_survey(params[:id])
+      raise Discourse::NotFound if survey.blank?
+
+      DiscourseEngage::Store.delete_response(params[:id], params[:user_id].to_i, params[:response_id])
       render json: success_json
     end
 

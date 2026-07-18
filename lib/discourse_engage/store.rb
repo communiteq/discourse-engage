@@ -43,6 +43,21 @@ module ::DiscourseEngage
         PluginStore.remove(DiscourseEngage::PLUGIN_NAME, survey_key(survey_id))
       end
 
+      def delete_response(survey_id, user_id, response_id)
+        PluginStore.remove(
+          DiscourseEngage::PLUGIN_NAME,
+          response_key(survey_id, user_id, response_id),
+        )
+      end
+
+      def count_responses(survey_id)
+        prefix = "#{RESPONSE_KEY_PREFIX}#{survey_id}:"
+        PluginStoreRow
+          .where(plugin_name: DiscourseEngage::PLUGIN_NAME, type_name: "JSON")
+          .where("key LIKE ?", "#{prefix}%")
+          .count
+      end
+
       def store_response(survey_id:, user_id:, answers:, metadata: {})
         response_id = next_response_id(survey_id, user_id)
         payload = {

@@ -19,6 +19,7 @@ Discourse::Application.routes.draw do
     post "/api/surveys" => "discourse_engage/admin_surveys#create"
     put "/api/surveys/:id" => "discourse_engage/admin_surveys#update"
     delete "/api/surveys/:id" => "discourse_engage/admin_surveys#destroy"
+    delete "/api/surveys/:id/entries/:user_id/:response_id" => "discourse_engage/admin_surveys#destroy_entry"
   end
 
   scope "/discourse-engage" do

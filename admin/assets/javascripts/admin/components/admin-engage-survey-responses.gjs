@@ -1,18 +1,23 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
+import { service } from "@ember/service";
 import { on } from "@ember/modifier";
 import { fn, get } from "@ember/helper";
 import DButton from "discourse/components/d-button";
+import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
 
 export default class AdminEngageSurveyResponses extends Component {
+  @service dialog;
+
   @tracked expandedRows = {};
   @tracked exporting = false;
+  @tracked entries = this.args.entries || [];
 
   get hasEntries() {
-    return this.args.entries?.length > 0;
+    return this.entries.length > 0;
   }
 
   @action
@@ -86,11 +91,17 @@ export default class AdminEngageSurveyResponses extends Component {
             </tr>
           </thead>
           <tbody>
-            {{#each @entries as |entry|}}
+            {{#each this.entries as |entry|}}
               <tr class="entry-row">
                 <td>{{entry.username}}</td>
                 <td>{{entry.submitted_at}}</td>
                 <td class="entry-actions">
+                  <DButton
+                    @label="discourse_engage.admin.delete_entry"
+                    @action={{fn this.deleteEntry entry}}
+                    @icon="trash-can"
+                    class="btn-small btn-danger"
+                  />
                   <button
                     type="button"
                     {{on "click" (fn this.toggleExpand entry.entry_id)}}
@@ -122,6 +133,27 @@ export default class AdminEngageSurveyResponses extends Component {
       {{/if}}
     </div>
   </template>
+
+  @action
+  deleteEntry(entry) {
+    this.dialog.confirm({
+      message: i18n("discourse_engage.admin.delete_entry_confirm"),
+      didConfirm: async () => {
+        try {
+          const surveyId = this.args.survey.id;
+          await ajax(
+            `/admin/plugins/discourse-engage/api/surveys/${surveyId}/entries/${entry.user_id}/${entry.response_id}`,
+            { type: "DELETE" },
+          );
+          this.entries = this.entries.filter(
+            (e) => e.entry_id !== entry.entry_id,
+          );
+        } catch (error) {
+          popupAjaxError(error);
+        }
+      },
+    });
+  }
 
   @action
   formatJson(data) {

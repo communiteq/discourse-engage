@@ -18,6 +18,9 @@ en:
         show_data: "Show Data"
         hide_data: "Hide Data"
         answers: "Answers"
+        delete_entry: "Delete Entry"
+        delete_entry_confirm: "Are you sure you want to delete this entry?"
+        entries_count: "Entries"
         no_entries: "No entries yet for this survey."
         entries_table:
           username: "Username"

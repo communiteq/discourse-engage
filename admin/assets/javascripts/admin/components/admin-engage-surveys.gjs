@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { fn, concat } from "@ember/helper";
+import { fn, concat, get } from "@ember/helper";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
 import { LinkTo } from "@ember/routing";
@@ -17,6 +17,7 @@ export default class AdminEngageSurveys extends Component {
 
   @tracked loading = false;
   @tracked surveys = [];
+  @tracked entryCounts = {};
 
   constructor() {
     super(...arguments);
@@ -33,6 +34,7 @@ export default class AdminEngageSurveys extends Component {
     try {
       const result = await ajax("/admin/plugins/discourse-engage/api/surveys");
       this.surveys = result.surveys || [];
+      this.entryCounts = result.entry_counts || {};
     } catch (error) {
       popupAjaxError(error);
     } finally {
@@ -71,6 +73,7 @@ export default class AdminEngageSurveys extends Component {
               <th>{{i18n "discourse_engage.admin.fields.title"}}</th>
               <th>{{i18n "discourse_engage.admin.fields.priority"}}</th>
               <th>{{i18n "discourse_engage.admin.fields.status"}}</th>
+              <th>{{i18n "discourse_engage.admin.entries_count"}}</th>
               <th></th>
             </tr>
           </thead>
@@ -84,6 +87,7 @@ export default class AdminEngageSurveys extends Component {
                     {{i18n (concat "discourse_engage.admin.status." survey.status)}}
                   </span>
                 </td>
+                <td class="engage-admin-entry-count">{{get this.entryCounts survey.id}}</td>
                 <td class="engage-admin-actions">
                   <LinkTo
                     @route="adminPlugins.show.discourse-engage-surveys.edit"
