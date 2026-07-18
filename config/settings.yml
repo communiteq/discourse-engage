@@ -1,6 +1,6 @@
 plugins:
   discourse_engage_enabled:
-    default: true
+    default: false
     client: true
   discourse_engage_initial_delay_seconds:
     default: 60
