@@ -18,12 +18,3 @@ DiscourseEngage::Engine.routes.draw do
     post "/surveys/:id/responses" => "surveys#submit_response"
   end
 end
-
-Discourse::Application.routes.append do
-  namespace :admin, constraints: StaffConstraint.new do
-    get "plugins/discourse-engage/surveys" => "plugins#show",
-        :defaults => {
-          plugin_id: "discourse-engage",
-        }
-  end
-end

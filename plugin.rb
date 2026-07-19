@@ -17,6 +17,28 @@ end
 require_relative "lib/discourse_engage/engine"
 
 after_initialize do
+  Discourse::Application.routes.append do
+    get "/admin/plugins/discourse-engage/surveys" => "admin/plugins#show",
+        constraints: StaffConstraint.new,
+        defaults: {
+          plugin_id: "discourse-engage",
+        }
+
+    get "/admin/plugins/discourse-engage/surveys/:survey_id/edit" => "admin/plugins#show",
+        constraints: StaffConstraint.new,
+        defaults: {
+          plugin_id: "discourse-engage",
+        }
+
+    get "/admin/plugins/discourse-engage/surveys/:survey_id/entries" => "admin/plugins#show",
+        constraints: StaffConstraint.new,
+        defaults: {
+          plugin_id: "discourse-engage",
+        }
+
+    mount DiscourseEngage::Engine, at: "/", as: "discourse_engage_plugin"
+  end
+
   add_admin_route(
     "discourse_engage.admin.title",
     "discourse-engage",
