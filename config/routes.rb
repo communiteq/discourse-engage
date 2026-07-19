@@ -9,7 +9,7 @@ DiscourseEngage::Engine.routes.draw do
     post "/api/surveys" => "admin_surveys#create"
     put "/api/surveys/:id" => "admin_surveys#update"
     delete "/api/surveys/:id" => "admin_surveys#destroy"
-    delete "/api/surveys/:id/entries/:user_id/:response_id" => "admin_surveys#destroy_entry"
+    delete "/api/surveys/:id/entries/:participant_key/:response_id" => "admin_surveys#destroy_entry"
   end
 
   scope "/discourse-engage" do

@@ -45,6 +45,7 @@ after_initialize do
     { use_new_show_route: true },
   )
 
+  require_relative "lib/discourse_engage/participant"
   require_relative "lib/discourse_engage/store"
   require_relative "lib/discourse_engage/rule_evaluator"
   require_relative "lib/discourse_engage/eligibility_service"

@@ -62,17 +62,26 @@ module DiscourseEngage
 
     def destroy_entry
       raise Discourse::InvalidParameters.new(:id) if params[:id].blank?
-      raise Discourse::InvalidParameters.new(:user_id) if params[:user_id].blank?
+      raise Discourse::InvalidParameters.new(:participant_key) if params[:participant_key].blank?
       raise Discourse::InvalidParameters.new(:response_id) if params[:response_id].blank?
 
       survey = DiscourseEngage::Store.get_survey(params[:id])
       raise Discourse::NotFound if survey.blank?
 
-      user_id = params[:user_id].to_i
-      DiscourseEngage::Store.delete_response(params[:id], user_id, params[:response_id])
+      participant = parse_participant_key!(params[:participant_key])
+      DiscourseEngage::Store.delete_response(
+        params[:id],
+        participant[:type],
+        participant[:id],
+        params[:response_id],
+      )
 
       if params[:reset].to_s == "true"
-        DiscourseEngage::Store.reset_user_state(params[:id], user_id)
+        DiscourseEngage::Store.reset_user_state(
+          params[:id],
+          participant[:type],
+          participant[:id],
+        )
       end
 
       render json: success_json
@@ -85,18 +94,20 @@ module DiscourseEngage
       raise Discourse::NotFound if survey.blank?
 
       responses = DiscourseEngage::Store.list_responses(params[:id])
-      user_ids = responses.map { |r| r["user_id"] || r[:user_id] }.compact.uniq
+      user_ids = responses.filter_map { |r| response_identity(r)[:user_id] }.uniq
       users_by_id = User.where(id: user_ids).index_by(&:id)
 
       entries =
         responses.map do |r|
-          uid = r["user_id"] || r[:user_id]
-          user = users_by_id[uid]
+          identity = response_identity(r)
+          user = identity[:user_id].present? ? users_by_id[identity[:user_id]] : nil
           {
-            entry_id: "#{uid || 'unknown'}:#{r["response_id"] || r[:response_id]}",
+            entry_id: "#{identity[:participant_key] || 'unknown'}:#{r["response_id"] || r[:response_id]}",
             response_id: r["response_id"] || r[:response_id],
-            user_id: uid,
-            username: user&.username || "unknown",
+            participant_key: identity[:participant_key],
+            participant_type: identity[:participant_type],
+            user_id: identity[:user_id],
+            username: display_name_for(identity, user),
             submitted_at: r["submitted_at"] || r[:submitted_at],
             answers: r["answers"] || r[:answers] || {},
           }
@@ -112,17 +123,18 @@ module DiscourseEngage
       raise Discourse::NotFound if survey.blank?
 
       responses = DiscourseEngage::Store.list_responses(params[:id])
-      user_ids = responses.map { |r| r["user_id"] || r[:user_id] }.compact.uniq
+      user_ids = responses.filter_map { |r| response_identity(r)[:user_id] }.uniq
       users_by_id = User.where(id: user_ids).index_by(&:id)
 
       csv_data = CSV.generate do |csv|
-        csv << ["Username", "Submitted At", "Answers"]
+        csv << ["Participant", "Participant Type", "Submitted At", "Answers"]
 
         responses.each do |r|
-          uid = r["user_id"] || r[:user_id]
-          user = users_by_id[uid]
+          identity = response_identity(r)
+          user = identity[:user_id].present? ? users_by_id[identity[:user_id]] : nil
           csv << [
-            user&.username || "unknown",
+            display_name_for(identity, user),
+            identity[:participant_type] || "unknown",
             r["submitted_at"] || r[:submitted_at] || "",
             JSON.generate(r["answers"] || r[:answers] || {}),
           ]
@@ -224,6 +236,42 @@ module DiscourseEngage
       else
         default
       end
+    end
+
+    def response_identity(response)
+      response = response.with_indifferent_access
+      participant_type = response[:participant_type].presence
+      participant_id = response[:participant_id].presence
+      user_id = response[:user_id].presence
+
+      if participant_type.blank? && user_id.present?
+        participant_type = "user"
+        participant_id = user_id.to_s
+      end
+
+      participant_key = response[:participant_key].presence
+      participant_key ||= DiscourseEngage::Participant.key_for(participant_type, participant_id)
+
+      {
+        participant_type: participant_type,
+        participant_id: participant_id,
+        participant_key: participant_key,
+        user_id: user_id&.to_i,
+      }
+    end
+
+    def display_name_for(identity, user)
+      return user.username if user.present?
+      return "Anonymous (#{identity[:participant_id]})" if identity[:participant_type] == "anon"
+
+      "unknown"
+    end
+
+    def parse_participant_key!(value)
+      parsed = DiscourseEngage::Participant.parse_key(value)
+      raise Discourse::InvalidParameters.new(:participant_key) if parsed.blank?
+
+      parsed
     end
   end
 end

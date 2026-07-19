@@ -86,7 +86,8 @@ export default class AdminEngageSurveyResponses extends Component {
         <table class="engage-entries-table">
           <thead>
             <tr>
-              <th>{{i18n "discourse_engage.admin.entries_table.username"}}</th>
+              <th>{{i18n "discourse_engage.admin.entries_table.participant"}}</th>
+              <th>{{i18n "discourse_engage.admin.entries_table.participant_type"}}</th>
               <th>{{i18n "discourse_engage.admin.entries_table.submitted_at"}}</th>
               <th></th>
             </tr>
@@ -95,6 +96,7 @@ export default class AdminEngageSurveyResponses extends Component {
             {{#each this.entries as |entry|}}
               <tr class="entry-row">
                 <td>{{entry.username}}</td>
+                <td>{{entry.participant_type}}</td>
                 <td>{{entry.submitted_at}}</td>
                 <td class="entry-actions">
                   <DButton
@@ -144,7 +146,7 @@ export default class AdminEngageSurveyResponses extends Component {
           try {
             const surveyId = this.args.survey.id;
             await ajax(
-              `/admin/plugins/discourse-engage/api/surveys/${surveyId}/entries/${entry.user_id}/${entry.response_id}`,
+              `/admin/plugins/discourse-engage/api/surveys/${surveyId}/entries/${entry.participant_key}/${entry.response_id}`,
               {
                 type: "DELETE",
                 data: { reset: resetEligibility },

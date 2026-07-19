@@ -11,7 +11,7 @@ export default class DiscourseEngageSurveysEditRoute extends DiscourseRoute {
         status: "draft",
         allow_decline: true,
         allow_defer: true,
-        rules_json: "{}",
+        rules_json: JSON.stringify({ logged_in: true }, null, 2),
         survey_json: "{}",
       };
     }

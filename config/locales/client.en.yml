@@ -32,7 +32,8 @@ en:
         declined_count: "Declined"
         no_entries: "No entries yet for this survey."
         entries_table:
-          username: "Username"
+          participant: "Participant"
+          participant_type: "Type"
           submitted_at: "Submitted At"
         test_modal:
           title: "Survey Test"
@@ -51,6 +52,7 @@ en:
           start_at: "Start At"
           end_at: "End At"
           rules_json: "Rules JSON"
+          rules_json_help: 'Use {"logged_in": true} for members only or {"logged_in": false} for anonymous visitors only. Combine with all/any/not for more complex targeting.'
           survey_json: "Survey JSON"
         status:
           draft: "Draft"

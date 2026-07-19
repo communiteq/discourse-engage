@@ -85,7 +85,6 @@ export default {
   name: "discourse-engage",
 
   initialize(container) {
-    const currentUser = container.lookup("service:current-user");
     const siteSettings = container.lookup("service:site-settings");
 
     if (!siteSettings.discourse_engage_enabled) {
@@ -100,10 +99,6 @@ export default {
         },
       ]);
     });
-
-    if (!currentUser) {
-      return;
-    }
 
     const startedAt = Date.now();
     let lastFetchAt = 0;

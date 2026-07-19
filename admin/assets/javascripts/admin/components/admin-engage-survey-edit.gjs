@@ -150,6 +150,7 @@ export default class AdminEngageSurveyEdit extends Component {
             class="form-control"
             rows="6"
           ></textarea>
+          <p class="form-help">{{i18n "discourse_engage.admin.fields.rules_json_help"}}</p>
         </div>
 
         <div class="form-group">

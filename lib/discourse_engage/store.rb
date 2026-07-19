@@ -47,16 +47,34 @@ module ::DiscourseEngage
         PluginStore.remove(DiscourseEngage::PLUGIN_NAME, survey_key(survey_id))
       end
 
-      def delete_response(survey_id, user_id, response_id)
+      def delete_response(survey_id, participant_type, participant_id, response_id)
         PluginStore.remove(
           DiscourseEngage::PLUGIN_NAME,
-          response_key(survey_id, user_id, response_id),
+          response_key(survey_id, participant_type, participant_id, response_id),
         )
+
+        if participant_type.to_s == "user"
+          PluginStore.remove(
+            DiscourseEngage::PLUGIN_NAME,
+            legacy_response_key(survey_id, participant_id, response_id),
+          )
+        end
       end
 
-      def reset_user_state(survey_id, user_id)
+      def reset_user_state(survey_id, participant_type, participant_id)
         # Clear PluginStore state
-        PluginStore.remove(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id))
+        PluginStore.remove(
+          DiscourseEngage::PLUGIN_NAME,
+          state_key(survey_id, participant_type, participant_id),
+        )
+
+        if participant_type.to_s == "user"
+          PluginStore.remove(
+            DiscourseEngage::PLUGIN_NAME,
+            legacy_state_key(survey_id, participant_id),
+          )
+        end
+
         invalidate_state_counts_cache
       end
 
@@ -81,9 +99,10 @@ module ::DiscourseEngage
 
           counts = {}
           rows.each do |key, raw_value|
-            # key: state:{survey_id}:{user_id}
+            # key: state:{survey_id}:{participant_type}:{participant_id}
             without_prefix = key.sub(STATE_KEY_PREFIX, "")
-            survey_id, _uid = without_prefix.split(":", 2)
+            parts = without_prefix.split(":")
+            survey_id = parts.first
             next if survey_id.blank?
             data = decode_json(raw_value)
             next if data.nil?
@@ -100,11 +119,14 @@ module ::DiscourseEngage
         Rails.cache.delete(STATE_COUNTS_CACHE_KEY)
       end
 
-      def store_response(survey_id:, user_id:, answers:, metadata: {})
-        response_id = next_response_id(survey_id, user_id)
+      def store_response(survey_id:, participant_type:, participant_id:, answers:, metadata: {}, user_id: nil)
+        response_id = next_response_id(survey_id, participant_type, participant_id)
         payload = {
           response_id: response_id,
           survey_id: survey_id,
+          participant_type: participant_type,
+          participant_id: participant_id,
+          participant_key: DiscourseEngage::Participant.key_for(participant_type, participant_id),
           user_id: user_id,
           answers: answers,
           metadata: metadata,
@@ -113,7 +135,7 @@ module ::DiscourseEngage
 
         PluginStore.set(
           DiscourseEngage::PLUGIN_NAME,
-          response_key(survey_id, user_id, response_id),
+          response_key(survey_id, participant_type, participant_id, response_id),
           payload,
         )
 
@@ -130,15 +152,22 @@ module ::DiscourseEngage
           .compact
       end
 
-      def get_state(survey_id, user_id)
-        PluginStore.get(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id)) || {}
+      def get_state(survey_id, participant_type, participant_id)
+        PluginStore.get(
+          DiscourseEngage::PLUGIN_NAME,
+          state_key(survey_id, participant_type, participant_id),
+        ) || legacy_state(survey_id, participant_type, participant_id) || {}
       end
 
-      def set_state(survey_id, user_id, attrs)
-        current = get_state(survey_id, user_id)
+      def set_state(survey_id, participant_type, participant_id, attrs)
+        current = get_state(survey_id, participant_type, participant_id)
         payload = current.merge(attrs).with_indifferent_access
         payload[:updated_at] = Time.zone.now.iso8601
-        PluginStore.set(DiscourseEngage::PLUGIN_NAME, state_key(survey_id, user_id), payload)
+        PluginStore.set(
+          DiscourseEngage::PLUGIN_NAME,
+          state_key(survey_id, participant_type, participant_id),
+          payload,
+        )
         invalidate_state_counts_cache
         payload
       end
@@ -157,8 +186,8 @@ module ::DiscourseEngage
         end
       end
 
-      def next_response_id(survey_id, user_id)
-        counter_key = "response_id:#{survey_id}:#{user_id}"
+      def next_response_id(survey_id, participant_type, participant_id)
+        counter_key = "response_id:#{survey_id}:#{participant_type}:#{participant_id}"
         DistributedMutex.synchronize("discourse_engage_#{counter_key}") do
           next_id = PluginStore.get(DiscourseEngage::PLUGIN_NAME, counter_key) || 1
           PluginStore.set(DiscourseEngage::PLUGIN_NAME, counter_key, next_id + 1)
@@ -166,18 +195,32 @@ module ::DiscourseEngage
         end
       end
 
-      def response_key(survey_id, user_id, response_id)
-        "#{RESPONSE_KEY_PREFIX}#{survey_id}:#{user_id}:#{response_id}"
+      def response_key(survey_id, participant_type, participant_id, response_id)
+        "#{RESPONSE_KEY_PREFIX}#{survey_id}:#{participant_type}:#{participant_id}:#{response_id}"
       end
 
-      def state_key(survey_id, user_id)
-        "#{STATE_KEY_PREFIX}#{survey_id}:#{user_id}"
+      def state_key(survey_id, participant_type, participant_id)
+        "#{STATE_KEY_PREFIX}#{survey_id}:#{participant_type}:#{participant_id}"
+      end
+
+      def legacy_response_key(survey_id, participant_id, response_id)
+        "#{RESPONSE_KEY_PREFIX}#{survey_id}:#{participant_id}:#{response_id}"
+      end
+
+      def legacy_state_key(survey_id, participant_id)
+        "#{STATE_KEY_PREFIX}#{survey_id}:#{participant_id}"
       end
 
       def decode_json(raw)
         raw.is_a?(String) ? JSON.parse(raw) : raw
       rescue JSON::ParserError
         nil
+      end
+
+      def legacy_state(survey_id, participant_type, participant_id)
+        return nil unless participant_type.to_s == "user"
+
+        PluginStore.get(DiscourseEngage::PLUGIN_NAME, legacy_state_key(survey_id, participant_id))
       end
     end
   end

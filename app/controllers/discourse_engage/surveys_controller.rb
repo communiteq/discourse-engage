@@ -3,10 +3,10 @@
 module DiscourseEngage
   class SurveysController < ::ApplicationController
     requires_plugin DiscourseEngage::PLUGIN_NAME
-    requires_login
+    before_action :ensure_participant
 
     def eligible
-      survey = DiscourseEngage::EligibilityService.first_eligible_for(current_user)
+      survey = DiscourseEngage::EligibilityService.first_eligible_for(@participant)
 
       if survey.blank?
         render_json_dump(survey: nil)
@@ -40,7 +40,8 @@ module DiscourseEngage
       when "start"
         DiscourseEngage::Store.set_state(
           survey["id"],
-          current_user.id,
+          @participant.type,
+          @participant.id,
           status: "started",
           last_prompted_at: now.iso8601,
         )
@@ -50,14 +51,20 @@ module DiscourseEngage
         tomorrow = now + 1.day
         DiscourseEngage::Store.set_state(
           survey["id"],
-          current_user.id,
+          @participant.type,
+          @participant.id,
           status: "deferred",
           next_eligible_at: tomorrow.iso8601,
         )
       when "decline"
         raise Discourse::InvalidAccess.new unless bool_setting(survey, "allow_decline", default: true)
 
-        DiscourseEngage::Store.set_state(survey["id"], current_user.id, status: "declined")
+        DiscourseEngage::Store.set_state(
+          survey["id"],
+          @participant.type,
+          @participant.id,
+          status: "declined",
+        )
       else
         raise Discourse::InvalidParameters.new(:decision)
       end
@@ -72,25 +79,36 @@ module DiscourseEngage
       answers = params.require(:answers)
       metadata = params[:metadata] || {}
 
-      if !DiscourseEngage::EligibilityService.eligible_for_survey?(survey, current_user)
-        state = DiscourseEngage::Store.get_state(survey["id"], current_user.id)
+      if !DiscourseEngage::EligibilityService.eligible_for_survey?(survey, @participant)
+        state = DiscourseEngage::Store.get_state(survey["id"], @participant.type, @participant.id)
         raise Discourse::InvalidAccess.new if state["status"] != "started"
       end
 
       response =
         DiscourseEngage::Store.store_response(
           survey_id: survey["id"],
-          user_id: current_user.id,
+          participant_type: @participant.type,
+          participant_id: @participant.id,
+          user_id: current_user&.id,
           answers: answers,
           metadata: metadata,
         )
 
-      DiscourseEngage::Store.set_state(survey["id"], current_user.id, status: "completed")
+      DiscourseEngage::Store.set_state(
+        survey["id"],
+        @participant.type,
+        @participant.id,
+        status: "completed",
+      )
 
       render_json_dump(response: response)
     end
 
     private
+
+    def ensure_participant
+      @participant = DiscourseEngage::Participant.from_request(self)
+    end
 
     def bool_setting(hash, key, default: true)
       # Use .key? to check for presence without being fooled by falsy values

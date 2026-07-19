@@ -3,20 +3,20 @@
 module ::DiscourseEngage
   class EligibilityService
     class << self
-      def first_eligible_for(user)
+      def first_eligible_for(participant)
         active_surveys =
           DiscourseEngage::Store
             .list_surveys
             .select { |survey| survey["status"] == "active" }
             .sort_by { |survey| -survey["priority"].to_i }
 
-        active_surveys.find { |survey| eligible_for_survey?(survey, user) }
+        active_surveys.find { |survey| eligible_for_survey?(survey, participant) }
       end
 
-      def eligible_for_survey?(survey, user)
+      def eligible_for_survey?(survey, participant)
         return false unless within_schedule?(survey)
-        return false unless DiscourseEngage::RuleEvaluator.matches?(survey["rules"], user)
-        return false if suppressed?(survey["id"], user)
+        return false unless DiscourseEngage::RuleEvaluator.matches?(survey["rules"], participant)
+        return false if suppressed?(survey["id"], participant)
 
         true
       end
@@ -34,8 +34,11 @@ module ::DiscourseEngage
         true
       end
 
-      def suppressed?(survey_id, user)
-        state = DiscourseEngage::Store.get_state(survey_id, user.id).with_indifferent_access
+      def suppressed?(survey_id, participant)
+        state =
+          DiscourseEngage::Store
+            .get_state(survey_id, participant.type, participant.id)
+            .with_indifferent_access
 
         return true if state[:status] == "completed"
         return true if state[:status] == "declined"
