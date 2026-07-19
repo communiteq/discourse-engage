@@ -3,6 +3,8 @@ import { tracked } from "@glimmer/tracking";
 import { on } from "@ember/modifier";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
+import didInsert from "@ember/render-modifiers/modifiers/did-insert";
+import didUpdate from "@ember/render-modifiers/modifiers/did-update";
 import DButton from "discourse/components/d-button";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
@@ -11,22 +13,16 @@ import { i18n } from "discourse-i18n";
 export default class AdminEngageSurveyEdit extends Component {
   @service router;
 
-  @tracked title = this.args.survey?.title || "";
-  @tracked priority = this.args.survey?.priority || 0;
-  @tracked status = this.args.survey?.status || "draft";
-  @tracked allowDecline = this.args.survey?.allow_decline ?? true;
-  @tracked allowDefer = this.args.survey?.allow_defer ?? true;
-  @tracked rulesJson = JSON.stringify(
-    this.args.survey?.rules_json || {},
-    null,
-    2
-  );
-  @tracked surveyJson = JSON.stringify(
-    this.args.survey?.survey_json || {},
-    null,
-    2
-  );
+  @tracked title = "";
+  @tracked priority = 0;
+  @tracked status = "draft";
+  @tracked allowDecline = true;
+  @tracked allowDefer = true;
+  @tracked rulesJson = "{}";
+  @tracked surveyJson = "{}";
   @tracked saving = false;
+
+  loadedSurveySignature = null;
 
   get isNew() {
     return !this.args.survey?.id;
@@ -34,6 +30,23 @@ export default class AdminEngageSurveyEdit extends Component {
 
   get pageTitle() {
     return this.isNew ? "New Survey" : `Edit: ${this.title}`;
+  }
+
+  get surveySignature() {
+    const survey = this.args.survey || {};
+    return [survey.id || "new", survey.updated_at || "", survey.status || "draft"].join(":");
+  }
+
+  get isDraftStatus() {
+    return this.status === "draft";
+  }
+
+  get isActiveStatus() {
+    return this.status === "active";
+  }
+
+  get isArchivedStatus() {
+    return this.status === "archived";
   }
 
   @action
@@ -78,8 +91,38 @@ export default class AdminEngageSurveyEdit extends Component {
     this.router.transitionTo("adminPlugins.show.discourse-engage-surveys");
   }
 
+  @action
+  syncFromSurvey() {
+    if (this.loadedSurveySignature === this.surveySignature) {
+      return;
+    }
+
+    const survey = this.args.survey || {};
+
+    this.title = survey.title || "";
+    this.priority = survey.priority || 0;
+    this.status = survey.status || "draft";
+    this.allowDecline = survey.allow_decline ?? true;
+    this.allowDefer = survey.allow_defer ?? true;
+    this.rulesJson = this.stringifyJson(survey.rules_json ?? survey.rules ?? {});
+    this.surveyJson = this.stringifyJson(survey.survey_json ?? {});
+    this.loadedSurveySignature = this.surveySignature;
+  }
+
+  stringifyJson(value) {
+    if (typeof value === "string") {
+      return value;
+    }
+
+    return JSON.stringify(value || {}, null, 2);
+  }
+
   <template>
-    <div class="engage-survey-edit">
+    <div
+      class="engage-survey-edit"
+      {{didInsert this.syncFromSurvey}}
+      {{didUpdate this.syncFromSurvey @survey}}
+    >
       <h2>{{this.pageTitle}}</h2>
 
       <form>
@@ -109,13 +152,12 @@ export default class AdminEngageSurveyEdit extends Component {
           <label for="survey-status">{{i18n "discourse_engage.admin.fields.status"}}</label>
           <select
             id="survey-status"
-            value={{this.status}}
             {{on "change" this.setStatus}}
             class="form-control"
           >
-            <option value="draft">{{i18n "discourse_engage.admin.status.draft"}}</option>
-            <option value="active">{{i18n "discourse_engage.admin.status.active"}}</option>
-            <option value="archived">{{i18n "discourse_engage.admin.status.archived"}}</option>
+            <option value="draft" selected={{this.isDraftStatus}}>{{i18n "discourse_engage.admin.status.draft"}}</option>
+            <option value="active" selected={{this.isActiveStatus}}>{{i18n "discourse_engage.admin.status.active"}}</option>
+            <option value="archived" selected={{this.isArchivedStatus}}>{{i18n "discourse_engage.admin.status.archived"}}</option>
           </select>
         </div>
 
